@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -10,17 +11,22 @@ const inactiveClass = "text-[var(--text-secondary)] hover:text-[var(--accent)] h
 
 export default function NavLinks() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  const safePath = mounted ? pathname : "";
   return (
-    <nav className="flex items-center gap-[6px]">
+    <nav className="flex items-center gap-[6px]" aria-label="Navigation">
       <Link
         href="/"
-        className={`${navClass} ${pathname === "/" ? activeClass : inactiveClass}`}
+        className={`${navClass} ${safePath === "/" ? activeClass : inactiveClass}`}
       >
         Home
       </Link>
       <Link
         href="/sleep"
-        className={`${navClass} ${pathname === "/sleep" ? activeClass : inactiveClass}`}
+        className={`${navClass} ${safePath === "/sleep" ? activeClass : inactiveClass}`}
       >
         Sleep Plan
       </Link>

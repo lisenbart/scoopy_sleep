@@ -159,3 +159,25 @@ STRIPE_SECRET_KEY=sk_test_51T5ONeAGYtMyrNuF...
 3. Збережи. Зроби **Trigger deploy**.
 
 Після цього при кожній успішній оплаті Stripe викликатиме твій URL, бекенд згенерує план, збереже його в Upstash Redis, і сторінка `/sleep?session_id=...` зможе його показати (а якщо налаштуєш Resend — і лист з планом і magic link прийде на пошту).
+
+---
+
+## Якщо в Event destinations «No event deliveries found»
+
+Якщо ти налаштував **Developers → Event destinations → scoopy_sleep** і бачиш **«No event deliveries found»**, це означає, що Stripe ще **ні разу не надсилав** події на цей endpoint.
+
+Перевір:
+
+1. **Режим (Test / Live)**  
+   У лівому нижньому куті Stripe Dashboard переконайся, що обрано **Test mode** (якщо тестуєш тестовими картками). Події в Test mode надсилаються тільки для тестових подій; destination має бути доступний у тому ж режимі.
+
+2. **Події для destination**  
+   У destination **scoopy_sleep** у блоці **«Selected events»** має бути обрано **`checkout.session.completed`** і зміни збережені.
+
+3. **URL endpoint**  
+   URL має бути рівно:  
+   `https://scoopysleep.netlify.app/api/stripe/webhook`  
+   (без слеша в кінці, https).
+
+4. **Щоб з’явилися deliveries**  
+   Зроби **новий** тестовий платіж (після збереження destination): заповни форму на сайті → Unlock → оплати тестовою карткою. Після цього в **Event destinations → scoopy_sleep** мають з’явитися доставки (Recent deliveries). Якщо їх досі немає — перевір, що ключі в Netlify тестові (`sk_test_...`) і що деплой з `STRIPE_WEBHOOK_SECRET` уже виконано.

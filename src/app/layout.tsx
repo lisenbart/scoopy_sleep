@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import Link from "next/link";
+import { Suspense } from "react";
 import NavLinks from "@/components/NavLinks";
+import NavLinksFallback from "@/components/NavLinksFallback";
 
 const sfCompactRounded = localFont({
   src: "./font/SF-Compact-Rounded-Regular.otf",
@@ -45,7 +47,9 @@ export default function RootLayout({
             >
               Scoopy Log
             </Link>
-            <NavLinks />
+            <Suspense fallback={<NavLinksFallback />}>
+              <NavLinks />
+            </Suspense>
           </div>
         </header>
         <main className="flex-1">{children}</main>
