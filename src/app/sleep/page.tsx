@@ -12,7 +12,9 @@ import SocialProofBlock from "@/components/sleep/SocialProofBlock";
 import FAQBlock from "@/components/sleep/FAQBlock";
 import SleepFooter from "@/components/sleep/SleepFooter";
 import FullPlanBlock from "@/components/sleep/FullPlanBlock";
+import SleepPageErrorBoundary from "@/components/sleep/SleepPageErrorBoundary";
 import { emitSleepEvent } from "@/lib/analytics";
+import { normalizePlan } from "@/lib/normalize-plan";
 import type { SleepPreview, SleepFullPlan } from "@/types/sleep";
 
 const DEFAULT_FORM: SleepFormData = {
@@ -137,18 +139,32 @@ function SleepPageContent() {
   }, [formData]);
 
   const sessionId = searchParams.get("session_id");
+  const MAX_POLL_COUNT = 45; // ~90 seconds
 
   useEffect(() => {
     if (!sessionId || fullPlan) return;
     let cancelled = false;
 
-    const poll = async () => {
+    const poll = async (count: number) => {
       try {
         const res = await fetch(`/api/sleep/plan?session_id=${encodeURIComponent(sessionId)}`);
-        const data = await res.json();
+        let data: { status?: string; plan?: SleepFullPlan } = {};
+        try {
+          const text = await res.text();
+          if (text) data = JSON.parse(text) as { status?: string; plan?: SleepFullPlan };
+        } catch {
+          if (cancelled) return;
+          if (count >= MAX_POLL_COUNT) {
+            setFulfillError("Something went wrong loading your plan. Please contact support.");
+            return;
+          }
+          setTimeout(() => poll(count + 1), POLL_INTERVAL_MS);
+          return;
+        }
         if (cancelled) return;
         if (data.status === "ready" && data.plan) {
-          setFullPlan(data.plan);
+          const plan = normalizePlan(data.plan);
+          setFullPlan(plan);
           emitSleepEvent("sleep_purchase_success");
           document.getElementById("full-plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
           return;
@@ -161,20 +177,29 @@ function SleepPageContent() {
           setFulfillError("This link has expired.");
           return;
         }
-        setTimeout(poll, POLL_INTERVAL_MS);
-      } catch {
+        if (count >= MAX_POLL_COUNT) {
+          setFulfillError("Your plan is taking longer than usual. We’ll send it by email if you added one, or contact support with your order.");
+          return;
+        }
+        setTimeout(() => poll(count + 1), POLL_INTERVAL_MS);
+      } catch (err) {
         if (cancelled) return;
-        setTimeout(poll, POLL_INTERVAL_MS);
+        if (count >= MAX_POLL_COUNT) {
+          setFulfillError("Something went wrong. Please try again or contact support.");
+          return;
+        }
+        setTimeout(() => poll(count + 1), POLL_INTERVAL_MS);
       }
     };
 
-    poll();
+    poll(0);
     return () => {
       cancelled = true;
     };
   }, [sessionId, fullPlan]);
 
   return (
+    <SleepPageErrorBoundary>
     <div>
       <SleepHero onCtaClick={scrollToForm} />
       <MiniTrustLine />
@@ -195,11 +220,18 @@ function SleepPageContent() {
         </div>
       )}
 
-      {fulfillError && !showPreview && (
+      {fulfillError && (
         <div className="container-narrow py-4">
           <p className="body text-[#EF4444]" role="alert">
             {fulfillError}
           </p>
+        </div>
+      )}
+
+      {sessionId && !fullPlan && !fulfillError && (
+        <div className="container-narrow py-6" role="status" aria-live="polite">
+          <p className="body text-[var(--text-secondary)]">Loading your plan…</p>
+          <p className="text-sm text-[var(--text-muted)] mt-2">This usually takes under a minute.</p>
         </div>
       )}
 
@@ -224,6 +256,7 @@ function SleepPageContent() {
       <FAQBlock />
       <SleepFooter />
     </div>
+    </SleepPageErrorBoundary>
   );
 }
 

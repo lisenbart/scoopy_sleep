@@ -29,7 +29,8 @@ function Section({
 }
 
 function Paragraphs({ text }: { text: string }) {
-  const parts = text.split(/\n\n+/).filter(Boolean);
+  const s = typeof text === "string" ? text : "";
+  const parts = s.split(/\n\n+/).filter(Boolean);
   return (
     <>
       {parts.map((p, i) => (
@@ -42,7 +43,8 @@ function Paragraphs({ text }: { text: string }) {
 }
 
 function Bullets({ text }: { text: string }) {
-  const lines = text.split("\n").filter((line) => line.trim());
+  const s = typeof text === "string" ? text : "";
+  const lines = s.split("\n").filter((line) => line.trim());
   return (
     <ul className="list-checkmarks space-y-2">
       {lines.map((line, i) => (
@@ -79,7 +81,7 @@ export default function FullPlanBlock({ plan }: FullPlanBlockProps) {
 
         <Section title="Detailed Day Schedule">
           <div className="space-y-4 sm:space-y-6">
-            {plan.days.map((d) => (
+            {Array.isArray(plan.days) && plan.days.map((d) => (
               <div key={d.day} className="card-scoopy card-scoopy-accent p-4 sm:p-6">
                 <h4 className="font-display text-lg text-[var(--text-primary)] mb-3">Day {d.day}</h4>
                 <dl className="grid gap-2 body text-[var(--text-primary)]">
@@ -87,12 +89,12 @@ export default function FullPlanBlock({ plan }: FullPlanBlockProps) {
                     <dt className="text-sm font-medium text-[var(--text-muted)]">Wake time</dt>
                     <dd>{d.wakeTime}</dd>
                   </div>
-                  {d.naps.length > 0 && (
+                  {Array.isArray(d.naps) && d.naps.length > 0 && (
                     <div>
                       <dt className="text-sm font-medium text-[var(--text-muted)]">Naps</dt>
                       <dd>
                         <ul className="list-checkmarks mt-1 space-y-1">
-                          {d.naps.map((nap, i) => (
+                          {d.naps.map((nap: { start?: string; end?: string; duration?: string }, i: number) => (
                             <li key={i}>
                               {nap.start} – {nap.end}
                               {nap.duration ? ` (${nap.duration})` : ""}

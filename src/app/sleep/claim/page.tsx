@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import FullPlanBlock from "@/components/sleep/FullPlanBlock";
+import { normalizePlan } from "@/lib/normalize-plan";
 import type { SleepFullPlan } from "@/types/sleep";
 
 const POLL_INTERVAL_MS = 2000;
@@ -26,7 +27,7 @@ function ClaimContent() {
       const res = await fetch(`/api/sleep/plan?token=${encodeURIComponent(token)}`);
       const data = await res.json();
       if (data.status === "ready" && data.plan) {
-        setPlan(data.plan);
+        setPlan(normalizePlan(data.plan as SleepFullPlan));
         setStatus("ready");
         return;
       }
