@@ -262,14 +262,16 @@ function SleepPageContent() {
 
 export default function SleepPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-[50vh] flex items-center justify-center text-[var(--text-muted)]">
-          Loading…
-        </div>
-      }
-    >
-      <SleepPageContent />
-    </Suspense>
+    <SleepPageErrorBoundary>
+      <Suspense
+        fallback={
+          <div className="min-h-[50vh] flex items-center justify-center text-[var(--text-muted)]">
+            Loading…
+          </div>
+        }
+      >
+        <SleepPageContent />
+      </Suspense>
+    </SleepPageErrorBoundary>
   );
 }
