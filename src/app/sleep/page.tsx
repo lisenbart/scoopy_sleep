@@ -51,7 +51,11 @@ function SleepPageContent() {
   const [queryParams, setQueryParams] = useState<{ sessionId: string | null; canceled: boolean }>({ sessionId: null, canceled: false });
 
   useEffect(() => {
-    setQueryParams(getQueryParams());
+    try {
+      setQueryParams(getQueryParams());
+    } catch (e) {
+      console.error("[sleep] getQueryParams failed", e);
+    }
   }, []);
 
   useEffect(() => {
@@ -168,8 +172,9 @@ function SleepPageContent() {
         try {
           const text = await res.text();
           if (text) data = JSON.parse(text) as { status?: string; plan?: SleepFullPlan };
-        } catch {
+        } catch (parseErr) {
           if (cancelled) return;
+          console.warn("[sleep] plan API parse error", parseErr);
           if (count >= MAX_POLL_COUNT) {
             setFulfillError("Something went wrong loading your plan. Please contact support.");
             return;
@@ -179,10 +184,15 @@ function SleepPageContent() {
         }
         if (cancelled) return;
         if (data.status === "ready" && data.plan) {
-          const plan = normalizePlan(data.plan);
-          setFullPlan(plan);
-          emitSleepEvent("sleep_purchase_success");
-          document.getElementById("full-plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          try {
+            const plan = normalizePlan(data.plan);
+            setFullPlan(plan);
+            emitSleepEvent("sleep_purchase_success");
+            document.getElementById("full-plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          } catch (err) {
+            console.error("[sleep] normalizePlan failed", err);
+            setFulfillError("Something went wrong loading your plan. Please contact support.");
+          }
           return;
         }
         if (data.status === "failed" || res.status === 502) {

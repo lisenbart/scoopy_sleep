@@ -1,8 +1,15 @@
 import type { SleepFullPlan } from "@/types/sleep";
 
-export function normalizePlan(plan: SleepFullPlan): SleepFullPlan {
+const EMPTY_PLAN: SleepFullPlan = {
+  summary: "",
+  days: [],
+};
+
+export function normalizePlan(plan: SleepFullPlan | null | undefined): SleepFullPlan {
+  if (plan == null || typeof plan !== "object") return EMPTY_PLAN;
   const p = plan as Record<string, unknown>;
-  return {
+  try {
+    return {
     summary: typeof p.summary === "string" ? p.summary : "",
     days: Array.isArray(p.days)
       ? p.days.map((d: Record<string, unknown>) => ({
@@ -23,4 +30,7 @@ export function normalizePlan(plan: SleepFullPlan): SleepFullPlan {
     troubleshooting: p.troubleshooting != null ? String(p.troubleshooting) : undefined,
     optimizationTips: p.optimizationTips != null ? String(p.optimizationTips) : undefined,
   };
+  } catch {
+    return EMPTY_PLAN;
+  }
 }
