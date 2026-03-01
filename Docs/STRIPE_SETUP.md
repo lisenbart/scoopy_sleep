@@ -104,7 +104,8 @@ STRIPE_SECRET_KEY=sk_test_51T5ONeAGYtMyrNuF...
 2. **Key:**  
    `NEXT_PUBLIC_APP_URL`
 3. **Value:**  
-   `https://scoopysleep.netlify.app`
+   `https://scoopysleep.netlify.app`  
+   (без слеша в кінці — інакше після оплати посилання буде з подвійним слешем і можлива помилка в браузері.)
 4. Збережи.
 
 Це потрібно, щоб після оплати Stripe повертав користувача на твій сайт, а не на localhost.

@@ -35,7 +35,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
+  // No trailing slash: avoid double slash in /sleep path (e.g. https://site.com//sleep) which can break history.replaceState
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin).replace(/\/$/, "");
 
   try {
     const stripe = getStripe();

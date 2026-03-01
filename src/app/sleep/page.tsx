@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import SleepHero from "@/components/sleep/SleepHero";
 import MiniTrustLine from "@/components/sleep/MiniTrustLine";
 import SleepForm, { type SleepFormData } from "@/components/sleep/SleepForm";
@@ -29,32 +30,25 @@ const POLL_INTERVAL_MS = 2000;
 const STORAGE_KEY_PREVIEW = "sleep_preview";
 const STORAGE_KEY_FORM = "sleep_form";
 
-function getQueryParams(): { sessionId: string | null; canceled: boolean } {
-  if (typeof window === "undefined") return { sessionId: null, canceled: false };
-  try {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      sessionId: params.get("session_id"),
-      canceled: params.get("canceled") === "1",
-    };
-  } catch {
-    return { sessionId: null, canceled: false };
-  }
-}
-
 function SleepPageContent() {
+  const searchParams = useSearchParams();
+  const sessionIdFromUrl = searchParams.get("session_id");
+  const canceled = searchParams.get("canceled") === "1";
+
   const formRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState<SleepFormData>(DEFAULT_FORM);
   const [preview, setPreview] = useState<SleepPreview | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [queryParams, setQueryParams] = useState<{ sessionId: string | null; canceled: boolean }>({ sessionId: null, canceled: false });
 
+  // Normalize URL if it has double slash (e.g. /sleep from Stripe became //sleep). Prevents SecurityError from history.replaceState.
   useEffect(() => {
-    try {
-      setQueryParams(getQueryParams());
-    } catch (e) {
-      console.error("[sleep] getQueryParams failed", e);
+    if (typeof window === "undefined") return;
+    const path = window.location.pathname;
+    if (path.indexOf("//") !== -1) {
+      const fixed = path.replace(/\/+/g, "/");
+      const newUrl = `${window.location.origin}${fixed}${window.location.search}${window.location.hash}`;
+      window.history.replaceState(undefined, "", newUrl);
     }
   }, []);
 
@@ -79,7 +73,8 @@ function SleepPageContent() {
   const [isUnlockLoading, setIsUnlockLoading] = useState(false);
   const [fullPlan, setFullPlan] = useState<SleepFullPlan | null>(null);
   const [fulfillError, setFulfillError] = useState<string | null>(null);
-  const { sessionId: sessionIdFromUrl, canceled } = queryParams;
+
+  const sessionId = sessionIdFromUrl ?? null;
 
   const scrollToForm = useCallback(() => {
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
